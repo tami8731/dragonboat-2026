@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# 編輯器
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 本地開發暫存
+*.log
+node_modules/

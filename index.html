@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>2026雙北端午龍舟賽程查詢</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+  <style>
+    :root {
+      --green: #0f4d3a;
+      --green-light: #e8f3ed;
+      --bg: #f5f7f4;
+      --text: #1f2d24;
+      --muted: #66736b;
+      --card: #ffffff;
+      --border: #d9e3dc;
+      --yellow: #fff3cd;
+      --blue: #e8f3ff;
+      --red: #ffe8e8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    header {
+      background: linear-gradient(135deg, #0e3f31, #1f7a55);
+      color: white;
+      padding: 24px 18px 34px;
+      border-radius: 0 0 24px 24px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      opacity: 0.9;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 14px 40px;
+    }
+
+    .panel {
+      background: white;
+      margin-top: -20px;
+      padding: 14px;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    }
+
+    .search-input,
+    select {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 15px;
+      background: white;
+      margin-bottom: 10px;
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .quick-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 0 4px;
+    }
+
+    .quick-row button {
+      border: none;
+      background: var(--green-light);
+      color: var(--green);
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 14px;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .quick-row button.active {
+      background: var(--green);
+      color: white;
+    }
+
+    .summary {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 16px 2px 10px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .summary strong {
+      color: var(--text);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 18px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.05);
+      border-left: 5px solid var(--green);
+    }
+
+    .card.event {
+      border-left-color: #986b1f;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .time {
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 600;
+    }
+
+    .badge.live {
+      background: var(--yellow);
+      color: #8a6500;
+    }
+
+    .badge.done {
+      background: var(--blue);
+      color: #1d5f9f;
+    }
+
+    .badge.cancel {
+      background: var(--red);
+      color: #a13b3b;
+    }
+
+    .lanes {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+
+    .lane {
+      background: #f8faf8;
+      border: 1px solid #edf1ee;
+      border-radius: 12px;
+      padding: 10px;
+    }
+
+    .lane-main {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    .lane-number {
+      font-weight: 700;
+      color: var(--green);
+      min-width: 52px;
+    }
+
+    .team {
+      flex: 1;
+      font-weight: 700;
+      word-break: break-word;
+    }
+
+    .lane-result {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .note {
+      margin-top: 12px;
+      padding: 10px;
+      background: #fffaf0;
+      border-radius: 12px;
+      color: #775b25;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .updated {
+      margin-top: 10px;
+      color: #87918a;
+      font-size: 12px;
+    }
+
+    .empty,
+    .loading,
+    .error {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 8px;
+      line-height: 1.8;
+    }
+
+    .error {
+      color: #b00020;
+    }
+
+    .disclaimer {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .card.city-taipei {
+      border-left-color: #1f7a8c;
+    }
+
+    .card.city-newtaipei {
+      border-left-color: #d97706;
+    }
+
+    .city-label {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .city-label.taipei {
+      background: #e6f4f6;
+      color: #1f7a8c;
+    }
+
+    .city-label.newtaipei {
+      background: #fff3df;
+      color: #b45309;
+    }
+
+    @media (min-width: 720px) {
+      header {
+        padding: 34px 28px 44px;
+      }
+
+      header h1 {
+        font-size: 32px;
+      }
+
+      .panel {
+        padding: 18px;
+      }
+
+      .filters {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      .lanes {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>2026雙北端午龍舟賽程查詢</h1>
+    <p>快速查詢台北市、新北市龍舟賽程，可依日期、城市、船型、組別與隊名搜尋。</p>
+    <p class="disclaimer">※ 本頁賽程與成績資訊僅供參考，實際賽程、晉級與成績仍以大會現場公告為準。</p>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <input
+        id="keyword"
+        class="search-input"
+        type="search"
+        placeholder="搜尋隊名、場次、組別，例如：三Ｍ、混合組、預賽"
+      />
+
+      <div class="filters">
+        <select id="cityFilter">
+          <option value="">全部城市</option>
+        </select>
+
+        <select id="dateFilter">
+          <option value="">全部日期</option>
+        </select>
+
+        <select id="boatFilter">
+          <option value="">全部船型</option>
+        </select>
+
+        <select id="groupFilter">
+          <option value="">全部組別</option>
+        </select>
+
+        <select id="statusFilter">
+          <option value="">全部狀態</option>
+        </select>
+      </div>
+    </section>
+
+    <div class="quick-row">
+      <button data-status="" class="active" onclick="setQuickStatus('')">全部</button>
+      <button data-status="未開始" onclick="setQuickStatus('未開始')">未開始</button>
+      <button data-status="比賽中" onclick="setQuickStatus('比賽中')">比賽中</button>
+      <button data-status="已完成" onclick="setQuickStatus('已完成')">已完成</button>
+      <button data-status="延賽" onclick="setQuickStatus('延賽')">延賽</button>
+    </div>
+
+    <div class="summary">
+      <div>共 <strong id="count">0</strong> 場次</div>
+      <div id="lastLoaded">資料讀取中</div>
+    </div>
+
+    <section id="scheduleList">
+      <div class="loading">賽程載入中...</div>
+    </section>
+  </main>
+
+  <script>
+    /**
+     * 這裡換成你的 Google Sheet CSV 發布網址
+     */
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0BPcjG1dSjL_t2xyJf7ppOamK3KgWKN5H9XnJKs-MXV4ZIsNz6yT6JD1sDFaHv07XaRqJsrJQhlSI/pub?gid=1796006260&single=true&output=csv";
+    const url = `${SHEET_CSV_URL}&t=${Date.now()}`;
+
+    let schedules = [];
+
+    const fields = {
+      city: "賽事城市",
+      type: "資料類型",
+      date: "日期",
+      time: "時間",
+      totalNo: "總場次",
+      boat: "競賽類別",
+      group: "組別",
+      round: "分組場次",
+      lane1: "水道一",
+      lane2: "水道二",
+      lane3: "水道三",
+      lane4: "水道四",
+      place: "地點",
+      note: "備註",
+      status: "狀態",
+      lane1Time: "水道一成績",
+      lane1Rank: "水道一名次",
+      lane1Advance: "水道一晉級",
+      lane2Time: "水道二成績",
+      lane2Rank: "水道二名次",
+      lane2Advance: "水道二晉級",
+      lane3Time: "水道三成績",
+      lane3Rank: "水道三名次",
+      lane3Advance: "水道三晉級",
+      lane4Time: "水道四成績",
+      lane4Rank: "水道四名次",
+      lane4Advance: "水道四晉級",
+      updatedAt: "最後更新時間",
+      source: "資料來源"
+    };
+
+    const FIXED_STATUS_OPTIONS = [
+      "未開始",
+      "比賽中",
+      "已完成",
+      "延賽",
+      "取消"
+    ];
+
+    const listEl = document.getElementById("scheduleList");
+    const countEl = document.getElementById("count");
+    const lastLoadedEl = document.getElementById("lastLoaded");
+
+    const keywordEl = document.getElementById("keyword");
+    const cityFilter = document.getElementById("cityFilter");
+    const dateFilter = document.getElementById("dateFilter");
+    const boatFilter = document.getElementById("boatFilter");
+    const groupFilter = document.getElementById("groupFilter");
+    const statusFilter = document.getElementById("statusFilter");
+
+    document.addEventListener("DOMContentLoaded", init);
+
+    function init() {
+      if (!SHEET_CSV_URL || SHEET_CSV_URL.includes("請貼上")) {
+        listEl.innerHTML = `
+          <div class="error">
+            尚未設定 Google Sheet CSV 網址。<br>
+            請先把 SHEET_CSV_URL 換成你的 CSV 發布網址。
+          </div>
+        `;
+        lastLoadedEl.textContent = "尚未設定資料來源";
+        return;
+      }
+
+      loadCSV();
+
+      [keywordEl, cityFilter, dateFilter, boatFilter, groupFilter, statusFilter].forEach(el => {
+        el.addEventListener("input", render);
+        el.addEventListener("change", render);
+      });
+    }
+
+    function loadCSV() {
+      Papa.parse(url, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function(results) {
+          schedules = results.data
+            .map(normalizeRow)
+            .filter(row => row.date || row.time || row.totalNo || row.type);
+
+          buildFilters();
+          render();
+
+          const now = new Date();
+          lastLoadedEl.textContent = `讀取時間 ${formatTime(now)}`;
+        },
+        error: function(error) {
+          console.error(error);
+          listEl.innerHTML = `
+            <div class="error">
+              資料載入失敗，請確認 Google Sheet 是否已發布成 CSV，且網址是否正確。
+            </div>
+          `;
+          lastLoadedEl.textContent = "讀取失敗";
+        }
+      });
+    }
+
+
+
+
+    function normalizeRow(row) {
+      const get = key => clean(row[fields[key]]);
+
+      return {
+        city: get("city"),
+        type: get("type") || "比賽",
+        date: get("date"),
+        time: get("time"),
+        totalNo: get("totalNo"),
+        boat: get("boat"),
+        group: get("group"),
+        round: get("round"),
+        place: get("place"),
+        note: get("note"),
+        status: get("status") ,
+        updatedAt: get("updatedAt"),
+        source: get("source"),
+
+        lanes: [
+          {
+            no: 1,
+            team: get("lane1"),
+            result: get("lane1Time"),
+            rank: get("lane1Rank"),
+            advance: get("lane1Advance")
+          },
+          {
+            no: 2,
+            team: get("lane2"),
+            result: get("lane2Time"),
+            rank: get("lane2Rank"),
+            advance: get("lane2Advance")
+          },
+          {
+            no: 3,
+            team: get("lane3"),
+            result: get("lane3Time"),
+            rank: get("lane3Rank"),
+            advance: get("lane3Advance")
+          },
+          {
+            no: 4,
+            team: get("lane4"),
+            result: get("lane4Time"),
+            rank: get("lane4Rank"),
+            advance: get("lane4Advance")
+          }
+        ].filter(lane => lane.team && lane.team !== "-")
+      };
+    }
+
+    function clean(value) {
+      return String(value || "").trim();
+    }
+
+    function buildFilters() {
+      fillSelect(cityFilter, schedules.map(item => item.city));
+      fillSelect(dateFilter, schedules.map(item => item.date));
+      fillSelect(boatFilter, schedules.map(item => item.boat));
+      fillSelect(groupFilter, schedules.map(item => item.group));
+
+      fillSelect(statusFilter, [
+        ...FIXED_STATUS_OPTIONS,
+        ...schedules.map(item => item.status)
+      ]);
+    }
+
+    function normalizeText(value) {
+      return String(value || "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/[　]/g, "")
+        .normalize("NFKC");
+    }
+
+    function parseDateTime(item) {
+      // 例如：2026/6/19 (五)
+      const dateText = String(item.date || "")
+        .replace(/\s+/g, "")
+        .replace(/\(.+\)/, "");
+
+      const timeText = String(item.time || "").trim();
+
+      const dateTimeText = `${dateText} ${timeText}`;
+      const timestamp = new Date(dateTimeText).getTime();
+
+      return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    function parseTotalNo(value) {
+      const num = parseInt(String(value || "").replace(/[^\d]/g, ""), 10);
+      return Number.isNaN(num) ? 99999 : num;
+    }
+
+    function fillSelect(selectEl, values) {
+      const currentFirstOption = selectEl.options[0].outerHTML;
+      const uniqueValues = [...new Set(values.filter(Boolean))];
+
+      selectEl.innerHTML = currentFirstOption;
+
+      uniqueValues.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        selectEl.appendChild(option);
+      });
+    }
+
+    function setQuickStatus(status) {
+      statusFilter.value = status;
+
+      document.querySelectorAll(".quick-row button").forEach(button => {
+        button.classList.toggle("active", button.dataset.status === status);
+      });
+
+      render();
+    }
+
+    function render() {
+      const keyword = normalizeText(keywordEl.value);
+      const city = cityFilter.value;
+      const date = dateFilter.value;
+      const boat = boatFilter.value;
+      const group = groupFilter.value;
+      const status = statusFilter.value;
+
+      const filtered = schedules.filter(item => {
+        const searchableText = normalizeText([
+          item.city,
+          item.type,
+          item.date,
+          item.time,
+          item.totalNo,
+          item.boat,
+          item.group,
+          item.round,
+          item.place,
+          item.note,
+          getAutoStatus(item),
+          item.source,
+          ...item.lanes.map(lane => lane.team),
+          ...item.lanes.map(lane => lane.result),
+          ...item.lanes.map(lane => lane.rank),
+          ...item.lanes.map(lane => lane.advance)
+        ].join(" "));
+
+        return (!keyword || searchableText.includes(keyword)) &&
+          (!city || item.city === city) &&
+          (!date || item.date === date) &&
+          (!boat || item.boat === boat) &&
+          (!group || item.group === group) &&
+          (!status || getAutoStatus(item) === status);
+      });
+
+      filtered.sort((a, b) => {
+        const dateTimeA = parseDateTime(a);
+        const dateTimeB = parseDateTime(b);
+
+        if (dateTimeA !== dateTimeB) {
+          return dateTimeA - dateTimeB;
+        }
+
+        if (a.city !== b.city) {
+          return a.city.localeCompare(b.city, "zh-Hant");
+        }
+
+        return parseTotalNo(a.totalNo) - parseTotalNo(b.totalNo);
+      });
+
+      const raceCount = filtered.filter(item => item.type === "比賽").length;
+      countEl.textContent = raceCount;
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div class="empty">查無符合的賽程</div>`;
+        return;
+      }
+
+      listEl.innerHTML = filtered.map(renderCard).join("");
+    }
+
+    function renderCard(item) {
+      if (item.type !== "比賽") {
+        return renderEventCard(item);
+      }
+
+      const displayStatus = getAutoStatus(item);
+      const statusClass = getStatusClass(displayStatus);
+
+      const cityClass = getCityClass(item.city);
+      const cityLabelClass = getCityLabelClass(item.city);
+
+      return `
+        <article class="card ${cityClass}">
+          <div class="card-top">
+            <div>
+              <div class="city-label ${cityLabelClass}">${escapeHTML(item.city)}</div>
+              <div class="time">${escapeHTML(item.date)} ${escapeHTML(item.time)}</div>
+              <div class="meta">
+                ${escapeHTML(item.boat)}｜${escapeHTML(item.group)}
+                <br>
+                ${escapeHTML(item.round || "")}
+                ${item.totalNo ? `｜總場次 ${escapeHTML(item.totalNo)}` : ""}
+              </div>
+            </div>
+            <div class="badge ${statusClass}">${escapeHTML(displayStatus)}</div>
+          </div>
+
+          <div class="lanes">
+            ${item.lanes.map(renderLane).join("")}
+          </div>
+
+          ${item.note ? `<div class="note">${escapeHTML(item.note)}</div>` : ""}
+
+          <div class="updated">
+            地點：${escapeHTML(item.place || "-")}
+            ${item.updatedAt ? `<br>最後更新：${escapeHTML(item.updatedAt)}` : ""}
+            ${item.source ? `<br>資料來源：${escapeHTML(item.source)}` : ""}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderEventCard(item) {
+      const cityClass = getCityClass(item.city);
+      const cityLabelClass = getCityLabelClass(item.city);
+
+      return `
+        <article class="card event ${cityClass}">
+          <div class="card-top">
+            <div>
+              <div class="city-label ${cityLabelClass}">${escapeHTML(item.city)}</div>
+              <div class="time">${escapeHTML(item.date)} ${escapeHTML(item.time)}</div>
+              <div class="meta">
+                ${escapeHTML(item.type)}
+                ${item.totalNo ? `｜${escapeHTML(item.totalNo)}` : ""}
+              </div>
+            </div>
+            <div class="badge">${escapeHTML(item.type)}</div>
+          </div>
+
+          <div class="note">
+            地點：${escapeHTML(item.place || "-")}
+            ${item.note ? `<br>${escapeHTML(item.note)}` : ""}
+          </div>
+        </article>
+      `;
+    }
+
+    function renderLane(lane) {
+      const resultText = lane.result || "尚未填寫";
+      const rankText = lane.rank || "待確認";
+      const advanceText = lane.advance || "待確認";
+
+      return `
+        <div class="lane">
+          <div class="lane-main">
+            <div class="lane-number">水道 ${lane.no}</div>
+            <div class="team">${escapeHTML(lane.team)}</div>
+          </div>
+          <div class="lane-result">
+            成績：${escapeHTML(resultText)}｜名次：${escapeHTML(rankText)}｜晉級：${escapeHTML(advanceText)}
+          </div>
+        </div>
+      `;
+    }
+
+    function getStatusClass(status) {
+      if (status === "比賽中") return "live";
+      if (status === "已完成") return "done";
+      if (status === "取消" || status === "延賽") return "cancel";
+      return "";
+    }
+
+    function formatTime(date) {
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+
+    function escapeHTML(text) {
+      return String(text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function getAutoStatus(item) {
+      const manualStatus = clean(item.status);
+
+      // 這些狀態以 Google Sheet 手動填寫為準
+      if (["已完成", "延賽", "取消"].includes(manualStatus)) {
+        return manualStatus;
+      }
+
+      const raceTime = parseDateTime(item);
+      if (!raceTime) return manualStatus || "未開始";
+
+      const now = Date.now();
+
+      // 比賽預估時間區間：開賽後 15 分鐘內視為比賽中
+      const liveWindowMinutes = 15;
+      const liveWindowMs = liveWindowMinutes * 60 * 1000;
+
+      if (now < raceTime) {
+        return "未開始";
+      }
+
+      if (now >= raceTime && now <= raceTime + liveWindowMs) {
+        return "比賽中";
+      }
+
+      // 時間已過，但還沒填成績，先顯示待更新
+      return manualStatus || "待更新";
+    }
+
+    function getCityClass(city) {
+      const normalizedCity = clean(city);
+
+      if (normalizedCity === "臺北市" || normalizedCity === "台北市") {
+        return "city-taipei";
+      }
+
+      if (normalizedCity === "新北市") {
+        return "city-newtaipei";
+      }
+
+      return "";
+    }
+
+    function getCityLabelClass(city) {
+      const normalizedCity = clean(city);
+
+      if (normalizedCity === "臺北市" || normalizedCity === "台北市") {
+        return "taipei";
+      }
+
+      if (normalizedCity === "新北市") {
+        return "newtaipei";
+      }
+
+      return "";
+    }
+  </script>
+</body>
+</html>
