@@ -107,20 +107,45 @@
 
     .quick-row {
       display: flex;
+      align-items: center;
       gap: 8px;
       overflow-x: auto;
-      padding: 12px 0 4px;
+      padding: 6px 0 2px;
+    }
+
+    .quick-row+.quick-row {
+      padding-top: 4px;
+      padding-bottom: 8px;
+    }
+
+    .quick-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+      letter-spacing: 0.5px;
+    }
+
+    .quick-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--border);
+      flex-shrink: 0;
+      margin: 0 2px;
     }
 
     .quick-row button {
       border: none;
       background: var(--green-light);
       color: var(--green);
-      padding: 9px 14px;
+      padding: 8px 14px;
       border-radius: 999px;
       font-size: 14px;
       white-space: nowrap;
       cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
     }
 
     .quick-row button.active {
@@ -307,6 +332,13 @@
       color: #b45309;
     }
 
+    .city-stats {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
     @media (min-width: 720px) {
       header {
         padding: 34px 28px 44px;
@@ -321,7 +353,7 @@
       }
 
       .filters {
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
       }
 
       .lanes {
@@ -408,22 +440,41 @@
           <option value="">全部組別</option>
         </select>
 
+        <select id="stageFilter">
+          <option value="">全部階段</option>
+        </select>
+
         <select id="statusFilter">
           <option value="">全部狀態</option>
         </select>
       </div>
     </section>
 
+    <!-- 第一排：日期快捷（資料載入後動態產生） -->
+    <div class="quick-row" id="dateQuickRow">
+      <span class="quick-label">📅</span>
+      <button data-date="" class="active" onclick="setQuickDate('')">全部日期</button>
+    </div>
+
+    <!-- 第二排：城市 + 狀態 -->
     <div class="quick-row">
-      <button data-status="" class="active" onclick="setQuickStatus('')">全部</button>
-      <button data-status="未開始" onclick="setQuickStatus('未開始')">未開始</button>
-      <button data-status="比賽中" onclick="setQuickStatus('比賽中')">比賽中</button>
-      <button data-status="已完成" onclick="setQuickStatus('已完成')">已完成</button>
-      <button data-status="延賽" onclick="setQuickStatus('延賽')">延賽</button>
+      <span class="quick-label">📍</span>
+      <button data-city="" class="city-btn active" onclick="setQuickCity('')">全部</button>
+      <button data-city="臺北市" class="city-btn" onclick="setQuickCity('臺北市')">台北市</button>
+      <button data-city="新北市" class="city-btn" onclick="setQuickCity('新北市')">新北市</button>
+      <span class="quick-divider"></span>
+      <span class="quick-label">🚦</span>
+      <button data-status="" class="status-btn active" onclick="setQuickStatus('')">全部</button>
+      <button data-status="未開始" class="status-btn" onclick="setQuickStatus('未開始')">未開始</button>
+      <button data-status="比賽中" class="status-btn" onclick="setQuickStatus('比賽中')">比賽中</button>
+      <button data-status="已完成" class="status-btn" onclick="setQuickStatus('已完成')">已完成</button>
     </div>
 
     <div class="summary">
-      <div>共 <strong id="count">0</strong> 場次</div>
+      <div>
+        共 <strong id="count">0</strong> 場次
+        <div id="cityStats" class="city-stats"></div>
+      </div>
       <div id="lastLoaded">資料讀取中</div>
     </div>
 
@@ -457,6 +508,7 @@
       boat: "競賽類別",
       group: "組別",
       round: "分組場次",
+      stage: "賽程階段",
       laneStatus: "水道狀態",
       lane1: "水道一",
       lane2: "水道二",
@@ -481,6 +533,16 @@
       source: "資料來源"
     };
 
+    const FIXED_STAGE_OPTIONS = [
+      "預賽",
+      "複賽",
+      "半準決賽",
+      "準決賽 / 半決賽",
+      "決賽",
+      "排名賽",
+      "其他"
+    ];
+
     const FIXED_STATUS_OPTIONS = [
       "未開始",
       "比賽中",
@@ -491,6 +553,8 @@
 
     const listEl = document.getElementById("scheduleList");
     const countEl = document.getElementById("count");
+    const teamCountEl = document.getElementById("teamCount");
+    const cityStatsEl = document.getElementById("cityStats");
     const lastLoadedEl = document.getElementById("lastLoaded");
 
     const keywordEl = document.getElementById("keyword");
@@ -498,6 +562,7 @@
     const dateFilter = document.getElementById("dateFilter");
     const boatFilter = document.getElementById("boatFilter");
     const groupFilter = document.getElementById("groupFilter");
+    const stageFilter = document.getElementById("stageFilter");
     const statusFilter = document.getElementById("statusFilter");
 
     document.addEventListener("DOMContentLoaded", init);
@@ -522,10 +587,18 @@
 
       loadCSV();
 
-      [keywordEl, cityFilter, dateFilter, boatFilter, groupFilter, statusFilter].forEach(el => {
+      [keywordEl, cityFilter, dateFilter, boatFilter, groupFilter, stageFilter, statusFilter].forEach(el => {
         el.addEventListener("input", render);
         el.addEventListener("change", render);
       });
+
+      // 下拉選單手動變更時，同步對應的 quick-row 按鈕
+      statusFilter.addEventListener("change", () => syncStatusButtons(statusFilter.value));
+      statusFilter.addEventListener("input", () => syncStatusButtons(statusFilter.value));
+      cityFilter.addEventListener("change", () => syncCityButtons(cityFilter.value));
+      cityFilter.addEventListener("input", () => syncCityButtons(cityFilter.value));
+      dateFilter.addEventListener("change", () => syncDateButtons(dateFilter.value));
+      dateFilter.addEventListener("input", () => syncDateButtons(dateFilter.value));
     }
 
     function loadCSV() {
@@ -577,6 +650,7 @@
         status: get("status"),
         updatedAt: get("updatedAt"),
         source: get("source"),
+        stage: get("stage"),
 
         lanes: [
           {
@@ -620,11 +694,38 @@
       fillSelect(dateFilter, schedules.map(item => item.date));
       fillSelect(boatFilter, schedules.map(item => item.boat));
       fillSelect(groupFilter, schedules.map(item => item.group));
-
+      fillSelect(stageFilter, [
+        ...FIXED_STAGE_OPTIONS,
+        ...schedules.map(item => item.stage)
+      ]);
       fillSelect(statusFilter, [
         ...FIXED_STATUS_OPTIONS,
         ...schedules.map(item => item.status)
       ]);
+
+      // 動態產生日期快捷按鈕
+      buildDateQuickButtons();
+    }
+
+    function buildDateQuickButtons() {
+      const row = document.getElementById("dateQuickRow");
+
+      // 移除之前動態產生的按鈕（保留全部日期那顆）
+      row.querySelectorAll("button:not([data-date=''])").forEach(b => b.remove());
+
+      // 從資料取得不重複日期並排序
+      const dates = [...new Set(
+        schedules.filter(s => s.type === "比賽").map(s => s.date).filter(Boolean)
+      )].sort();
+
+      dates.forEach(date => {
+        const btn = document.createElement("button");
+        btn.dataset.date = date;
+        // 顯示「6/19 (五)」這種短格式
+        btn.textContent = date.replace(/^\d{4}\//, "").replace(/\s+/, " ");
+        btn.onclick = () => setQuickDate(date);
+        row.appendChild(btn);
+      });
     }
 
     function normalizeText(value) {
@@ -669,13 +770,42 @@
       });
     }
 
+    // === 快捷按鈕同步函式 ===
+
+    function syncStatusButtons(status) {
+      document.querySelectorAll(".status-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.status === status);
+      });
+    }
+
+    function syncCityButtons(city) {
+      // 下拉選單的城市值可能是「臺北市」，城市按鈕的 data-city 也用「臺北市」
+      document.querySelectorAll(".city-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.city === city);
+      });
+    }
+
+    function syncDateButtons(date) {
+      document.querySelectorAll("#dateQuickRow button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.date === date);
+      });
+    }
+
     function setQuickStatus(status) {
       statusFilter.value = status;
+      syncStatusButtons(status);
+      render();
+    }
 
-      document.querySelectorAll(".quick-row button").forEach(button => {
-        button.classList.toggle("active", button.dataset.status === status);
-      });
+    function setQuickCity(city) {
+      cityFilter.value = city;
+      syncCityButtons(city);
+      render();
+    }
 
+    function setQuickDate(date) {
+      dateFilter.value = date;
+      syncDateButtons(date);
       render();
     }
 
@@ -685,6 +815,7 @@
       const date = dateFilter.value;
       const boat = boatFilter.value;
       const group = groupFilter.value;
+      const stage = stageFilter.value;
       const status = statusFilter.value;
 
       const filtered = schedules.filter(item => {
@@ -712,6 +843,7 @@
           (!date || item.date === date) &&
           (!boat || item.boat === boat) &&
           (!group || item.group === group) &&
+          (!stage || item.stage === stage) &&
           (!status || getAutoStatus(item) === status);
       });
 
@@ -730,8 +862,19 @@
         return parseTotalNo(a.totalNo) - parseTotalNo(b.totalNo);
       });
 
-      const raceCount = filtered.filter(item => item.type === "比賽").length;
+      const raceItems = filtered.filter(item => item.type === "比賽");
+      const raceCount = raceItems.length;
+
       countEl.textContent = raceCount;
+
+      const cityStats = getCityStats(raceItems);
+      const cityStatsText = Object.entries(cityStats)
+        .map(([city, stat]) => {
+          return `${city}：${stat.raceCount} 場｜${stat.teams.size} 隊`;
+        })
+        .join("　");
+
+      cityStatsEl.textContent = cityStatsText;
 
       if (!filtered.length) {
         listEl.innerHTML = `<div class="empty">查無符合的賽程</div>`;
@@ -739,6 +882,50 @@
       }
 
       listEl.innerHTML = filtered.map(renderCard).join("");
+    }
+
+    function isValidTeamName(teamName) {
+      const name = clean(teamName);
+
+      if (!name) return false;
+      if (name === "-") return false;
+      if (name === "依大會排定") return false;
+      if (name === "依大會排定晉級隊伍") return false;
+
+      // 排除像「第一輪預賽第1組第一名」這種晉級席位，不算實際隊伍
+      if (/第.+輪預賽第.+組第.+名/.test(name)) return false;
+      if (/預賽第.+組第.+名/.test(name)) return false;
+      if (/準決賽第.+組第.+名/.test(name)) return false;
+      if (/半準決賽第.+組第.+名/.test(name)) return false;
+      if (/半決賽第.+組第.+名/.test(name)) return false;
+
+      // 排除「準決賽第1名」「準決賽第2名」這類決賽晉級席位（無「組」字）
+      if (/準決賽第.+名/.test(name)) return false;
+      if (/半決賽第.+名/.test(name)) return false;
+      if (/半準決賽第.+名/.test(name)) return false;
+      // 排除「預賽第X組第一名」（有「組第」但無「輪」的格式）
+      if (/預賽第.+名/.test(name)) return false;
+      // 排除「第X輪第X組第X名」等各種晉級席位格式
+      if (/第.+組第.+名/.test(name)) return false;
+
+      // 新北後段有些水道是 1、2、3、4 這種種子序號，也先不算隊伍
+      if (/^\d+$/.test(name)) return false;
+
+      return true;
+    }
+
+    function countUniqueTeams(items) {
+      const teams = new Set();
+
+      items.forEach(item => {
+        item.lanes.forEach(lane => {
+          if (isValidTeamName(lane.team)) {
+            teams.add(normalizeText(lane.team));
+          }
+        });
+      });
+
+      return teams.size;
     }
 
     function renderCard(item) {
@@ -936,6 +1123,33 @@
       }
 
       return `水道 ${laneNo}`;
+    }
+
+    function getCityStats(items) {
+      const stats = {};
+
+      items.forEach(item => {
+        if (item.type !== "比賽") return;
+
+        const city = clean(item.city) || "其他";
+
+        if (!stats[city]) {
+          stats[city] = {
+            raceCount: 0,
+            teams: new Set()
+          };
+        }
+
+        stats[city].raceCount += 1;
+
+        item.lanes.forEach(lane => {
+          if (isValidTeamName(lane.team)) {
+            stats[city].teams.add(normalizeText(lane.team));
+          }
+        });
+      });
+
+      return stats;
     }
   </script>
 </body>
