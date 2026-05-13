@@ -592,9 +592,7 @@
     <!-- 第一排：日期快捷 -->
     <div class="quick-row" id="dateQuickRow">
       <button data-date="" class="active" onclick="setQuickDate('')">全部日期</button>
-      <button data-date="2026/6/19 (五)" onclick="setQuickDate('2026/6/19 (五)')">6/19 (五)</button>
-      <button data-date="2026/6/20 (六)" onclick="setQuickDate('2026/6/20 (六)')">6/20 (六)</button>
-      <button data-date="2026/6/21 (日)" onclick="setQuickDate('2026/6/21 (日)')">6/21 (日)</button>
+      <!-- 日期按鈕將由 JavaScript 動態產生 -->
     </div>
 
     <!-- 城市快捷 -->
@@ -888,8 +886,31 @@
         ...schedules.map(item => item.status)
       ]);
 
-      // 移除動態產生日期快捷按鈕的呼叫，改用靜態 HTML
-      // buildDateQuickButtons();
+      buildDateQuickButtons();
+    }
+
+    function buildDateQuickButtons() {
+      const quickRow = document.getElementById("dateQuickRow");
+      // 保留第一個「全部日期」按鈕
+      const allBtn = quickRow.querySelector('button[data-date=""]');
+      quickRow.innerHTML = "";
+      quickRow.appendChild(allBtn);
+
+      const uniqueDates = [...new Set(schedules.map(item => item.date).filter(Boolean))];
+      
+      // 排序日期
+      uniqueDates.sort((a, b) => {
+        return new Date(a.replace(/\(.+\)/, "")) - new Date(b.replace(/\(.+\)/, ""));
+      });
+
+      uniqueDates.forEach(date => {
+        const btn = document.createElement("button");
+        btn.dataset.date = date;
+        // 顯示較短的格式，例如：6/19 (五)
+        btn.textContent = date.replace(/^2026\//, "");
+        btn.onclick = () => setQuickDate(date);
+        quickRow.appendChild(btn);
+      });
     }
 
 
