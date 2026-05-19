@@ -4,6 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="2026雙北端午龍舟賽程查詢 - 快速查詢台北市、新北市龍舟賽程，可依日期、城市、船型、組別與隊名搜尋。" />
+  <meta property="og:title" content="2026雙北端午龍舟賽程查詢" />
+  <meta property="og:description" content="快速查詢台北市、新北市龍舟賽程，即時掌握比賽狀態與成績。" />
 
   <title>2026雙北端午龍舟賽程查詢</title>
 
@@ -560,32 +563,32 @@
   <main class="container">
     <section class="panel">
       <div class="search-wrapper">
-        <input id="keyword" class="search-input" type="text" placeholder="搜尋隊名、場次、組別，例如：三Ｍ、混合組、預賽" />
-        <button id="clearSearch" title="清除搜尋" onclick="clearKeyword()">&#x2715;</button>
+        <input id="keyword" class="search-input" type="text" aria-label="搜尋隊伍或場次" placeholder="搜尋隊名、場次、組別，例如：三Ｍ、混合組、預賽" />
+        <button id="clearSearch" title="清除搜尋" aria-label="清除搜尋" onclick="clearKeyword()">&#x2715;</button>
       </div>
 
       <div class="filters">
-        <select id="cityFilter">
+        <select id="cityFilter" aria-label="選擇城市">
           <option value="">全部城市</option>
         </select>
 
-        <select id="dateFilter">
+        <select id="dateFilter" aria-label="選擇日期">
           <option value="">全部日期</option>
         </select>
 
-        <select id="boatFilter">
+        <select id="boatFilter" aria-label="選擇船型">
           <option value="">全部船型</option>
         </select>
 
-        <select id="groupFilter">
+        <select id="groupFilter" aria-label="選擇組別">
           <option value="">全部組別</option>
         </select>
 
-        <select id="stageFilter">
+        <select id="stageFilter" aria-label="選擇階段">
           <option value="">全部階段</option>
         </select>
 
-        <select id="statusFilter">
+        <select id="statusFilter" aria-label="選擇狀態">
           <option value="">全部狀態</option>
         </select>
       </div>
@@ -636,7 +639,6 @@
      * 這裡換成你的 Google Sheet CSV 發布網址
      */
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0BPcjG1dSjL_t2xyJf7ppOamK3KgWKN5H9XnJKs-MXV4ZIsNz6yT6JD1sDFaHv07XaRqJsrJQhlSI/pub?gid=1796006260&single=true&output=csv";
-    const url = `${SHEET_CSV_URL}&t=${Date.now()}`;
 
     let schedules = [];
 
@@ -781,7 +783,8 @@
     }
 
     function loadCSV() {
-      Papa.parse(url, {
+      const currentUrl = `${SHEET_CSV_URL}&t=${Date.now()}`;
+      Papa.parse(currentUrl, {
         download: true,
         header: true,
         skipEmptyLines: true,
