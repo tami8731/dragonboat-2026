@@ -548,8 +548,10 @@
     <h1>2026雙北端午龍舟賽程查詢</h1>
     <!-- 賽事正式全名 -->
     <ul class="event-names">
-      <li>🏆 2026臺北國際龍舟錦標賽</li>
-      <li>🏆 新北市議長盃第十六屆龍舟錦標賽</li>
+      <li>🏆 <a href="https://dragonboat.utk.com.tw/" target="_blank" rel="noopener noreferrer"
+          style="color: white;">2026臺北國際龍舟錦標賽</a></li>
+      <li>🏆 <a href="https://www.ntpc-dragonboat.com.tw/" target="_blank" rel="noopener noreferrer"
+          style="color: white;">新北市議長盃第十六屆龍舟錦標賽</a></li>
     </ul>
     <p>快速查詢台北市、新北市龍舟賽程，可依日期、城市、船型、組別與隊名搜尋。</p>
     <p class="disclaimer">※ 本頁賽程與成績資訊僅供參考，實際賽程、晉級與成績仍以大會現場公告為準。</p>
@@ -897,7 +899,7 @@
       quickRow.appendChild(allBtn);
 
       const uniqueDates = [...new Set(schedules.map(item => item.date).filter(Boolean))];
-      
+
       // 排序日期
       uniqueDates.sort((a, b) => {
         return new Date(a.replace(/\(.+\)/, "")) - new Date(b.replace(/\(.+\)/, ""));
