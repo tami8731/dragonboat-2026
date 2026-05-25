@@ -2,6 +2,15 @@
 <html lang="zh-Hant-TW">
 
 <head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-49K26EKFR8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-49K26EKFR8');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google-site-verification" content="RlTS9ZLpJVgqXbSbMZu6G_TbYv2_V6e9n74BKLxLK6k" />
@@ -718,9 +727,9 @@
     <!-- 賽事正式全名 -->
     <ul class="event-names">
       <li>🏆 <a href="https://dragonboat.utk.com.tw/" target="_blank" rel="noopener noreferrer"
-          style="color: white;">2026臺北國際龍舟錦標賽</a></li>
+          style="color: white;" onclick="if(typeof gtag === 'function') gtag('event', 'click_external', { link_name: '臺北官方網站' })">2026臺北國際龍舟錦標賽</a></li>
       <li>🏆 <a href="https://www.ntpc-dragonboat.com.tw/" target="_blank" rel="noopener noreferrer"
-          style="color: white;">新北市議長盃第十六屆龍舟錦標賽</a></li>
+          style="color: white;" onclick="if(typeof gtag === 'function') gtag('event', 'click_external', { link_name: '新北官方網站' })">新北市議長盃第十六屆龍舟錦標賽</a></li>
     </ul>
     <p>快速查詢<strong>臺北市</strong>、<strong>新北市</strong>端午龍舟賽程，可依日期、城市、船型、組別與隊名搜尋比賽時間。</p>
     <p class="disclaimer">※ 本頁賽程與成績資訊僅供參考，實際賽程、晉級與成績仍以大會現場公告為準。</p>
@@ -923,6 +932,33 @@
       cityFilter.addEventListener("input", () => syncCityButtons(cityFilter.value));
       dateFilter.addEventListener("change", () => syncDateButtons(dateFilter.value));
       dateFilter.addEventListener("input", () => syncDateButtons(dateFilter.value));
+
+      // --- GA 追蹤邏輯 ---
+      // 1. 追蹤下拉選單 (change 事件)
+      [cityFilter, dateFilter, boatFilter, groupFilter, stageFilter, statusFilter].forEach(el => {
+        el.addEventListener("change", (e) => {
+          if (typeof gtag === 'function' && e.target.value) {
+            gtag('event', 'filter_used', {
+              'filter_category': e.target.id,
+              'filter_value': e.target.value
+            });
+          }
+        });
+      });
+
+      // 2. 追蹤搜尋關鍵字 (Debounce 防抖動，避免每打一個字就送一次)
+      let gaSearchTimeout;
+      keywordEl.addEventListener("input", (e) => {
+        clearTimeout(gaSearchTimeout);
+        gaSearchTimeout = setTimeout(() => {
+          const val = e.target.value.trim();
+          if (val && typeof gtag === 'function') {
+            gtag('event', 'search', {
+              'search_term': val
+            });
+          }
+        }, 1500);
+      });
     }
 
     // 顯示 skeleton 占位卡片
@@ -1182,18 +1218,27 @@
       statusFilter.value = status;
       syncStatusButtons(status);
       render();
+      if (typeof gtag === 'function' && status) {
+        gtag('event', 'filter_used', { filter_category: 'quick_status', filter_value: status });
+      }
     }
 
     function setQuickCity(city) {
       cityFilter.value = city;
       syncCityButtons(city);
       render();
+      if (typeof gtag === 'function' && city) {
+        gtag('event', 'filter_used', { filter_category: 'quick_city', filter_value: city });
+      }
     }
 
     function setQuickDate(date) {
       dateFilter.value = date;
       syncDateButtons(date);
       render();
+      if (typeof gtag === 'function' && date) {
+        gtag('event', 'filter_used', { filter_category: 'quick_date', filter_value: date });
+      }
     }
 
     function render() {
@@ -1269,6 +1314,15 @@
 
       if (!filtered.length) {
         listEl.innerHTML = `<div class="empty">查無符合的賽程</div>`;
+        
+        // GA 追蹤查無結果 (避免頻繁觸發，透過 debounce)
+        if (typeof gtag === 'function' && keyword) {
+          clearTimeout(window.gaNoResultTimeout);
+          window.gaNoResultTimeout = setTimeout(() => {
+            gtag('event', 'no_search_results', { search_term: keyword });
+          }, 1500);
+        }
+        
         return;
       }
 
