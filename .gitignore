@@ -12,3 +12,4 @@
 # 本地開發暫存
 *.log
 node_modules/
+output/

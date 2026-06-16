@@ -383,10 +383,15 @@
 
     .quick-row {
       display: flex;
-      flex-wrap: wrap;
-      align-items: center;
       gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      align-items: center;
       padding: 6px 0 2px;
+    }
+
+    .quick-row::-webkit-scrollbar {
+      display: none;
     }
 
     .quick-row+.quick-row {
@@ -395,6 +400,7 @@
     }
 
     .quick-row button {
+      flex: 0 0 auto;
       border: none;
       background: var(--green-light);
       color: var(--green);
@@ -403,7 +409,6 @@
       font-size: 14px;
       white-space: nowrap;
       cursor: pointer;
-      flex-shrink: 0;
       transition: background 0.15s, color 0.15s;
     }
 
