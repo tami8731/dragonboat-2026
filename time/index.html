@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="2026 雙北端午龍舟精簡賽程，快速查看臺北市與新北市比賽時間與基本場次資訊。" />
+  <meta name="robots" content="noindex,follow" />
+  <meta property="og:title" content="2026 雙北端午龍舟精簡賽程" />
+  <meta property="og:description" content="快速查看臺北市與新北市比賽時間與基本場次資訊，不顯示水道資訊。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://tami8731.github.io/dragonboat-2026/time/" />
+  <meta property="og:image" content="https://tami8731.github.io/dragonboat-2026/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="2026 雙北端午龍舟精簡賽程" />
+  <meta name="twitter:description" content="快速查看臺北市與新北市比賽時間與基本場次資訊，不顯示水道資訊。" />
+  <meta name="twitter:image" content="https://tami8731.github.io/dragonboat-2026/og-image.png" />
+  <title>2026 雙北端午龍舟精簡賽程</title>
+  <link rel="canonical" href="https://tami8731.github.io/dragonboat-2026/time/" />
+  <link rel="preconnect" href="https://docs.google.com" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --green: #0f4d3a;
+      --green-light: #e8f3ed;
+      --bg: #f5f7f4;
+      --text: #1f2d24;
+      --muted: #66736b;
+      --card: #ffffff;
+      --border: #d9e3dc;
+      --yellow: #fff3cd;
+      --blue: #e8f3ff;
+      --red: #ffe8e8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    a { color: inherit; }
+
+    header {
+      background: linear-gradient(135deg, #0e3f31, #1f7a55);
+      color: white;
+      padding: 24px 18px 34px;
+      border-radius: 0 0 24px 24px;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 24px;
+      letter-spacing: 0.5px;
+    }
+
+    header p {
+      margin: 8px 0 0;
+      font-size: 14px;
+      line-height: 1.6;
+      opacity: 0.92;
+    }
+
+    .event-names {
+      margin: 10px 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .event-names li {
+      font-size: 13px;
+      opacity: 0.92;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 8px;
+      padding: 4px 10px;
+      white-space: nowrap;
+    }
+
+    .disclaimer {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+      border-radius: 12px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .header-links {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .header-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.24);
+    }
+
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 14px 40px;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 18px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    .panel {
+      margin-top: -18px;
+      padding: 18px;
+    }
+
+    .search-block {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .search-input,
+    select,
+    .multi-summary {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 15px;
+      background: white;
+    }
+
+    .multi-select {
+      position: relative;
+    }
+
+    .multi-select[open] .multi-summary {
+      border-color: #b7c9be;
+      box-shadow: 0 0 0 3px rgba(15, 77, 58, 0.08);
+    }
+
+    .multi-summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text);
+    }
+
+    .multi-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .multi-summary::after {
+      content: "⌄";
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .multi-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .multi-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .multi-option:hover {
+      background: #f6faf7;
+    }
+
+    .multi-option input {
+      margin: 0;
+      accent-color: var(--green);
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+    }
+
+    .quick-row {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      align-items: center;
+      padding: 6px 0 2px;
+    }
+
+    .quick-row::-webkit-scrollbar { display: none; }
+
+    .quick-row + .quick-row {
+      padding-top: 4px;
+      padding-bottom: 8px;
+    }
+
+    .quick-row button {
+      flex: 0 0 auto;
+      border: none;
+      background: var(--green-light);
+      color: var(--green);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .quick-row button.active {
+      background: var(--green);
+      color: white;
+    }
+
+    .summary {
+      margin: 16px 2px 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 14px;
+      flex-wrap: wrap;
+      background: transparent;
+      border-radius: 0;
+      box-shadow: none;
+    }
+
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    #resetBtn {
+      display: none;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid #c47b1a;
+      background: transparent;
+      color: #c47b1a;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    #resetBtn.visible {
+      display: inline-flex;
+    }
+
+    #resetBtn:hover {
+      background: #c47b1a;
+      color: white;
+    }
+
+    .city-stats {
+      margin-top: 4px;
+      font-size: 13px;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .date-section { margin-bottom: 18px; }
+
+    .date-heading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 10px;
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .date-heading::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+      border-left: 5px solid var(--green);
+    }
+
+    .card.city-taipei { border-left-color: #1f7a8c; }
+    .card.city-newtaipei { border-left-color: #d97706; }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .time {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 900;
+      line-height: 1.1;
+    }
+
+    .meta {
+      margin-top: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 9px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill.city-taipei { background: #e6f4f6; color: #1f7a8c; }
+    .pill.city-newtaipei { background: #fff3df; color: #b45309; }
+    .pill.boat { background: #eef3ff; color: #3659a2; }
+    .pill.group { background: #f4edf9; color: #6d4691; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      background: var(--green-light);
+      color: var(--green);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge.live { background: var(--yellow); color: #8a6500; }
+    .badge.done { background: var(--blue); color: #1d5f9f; }
+    .badge.cancel { background: var(--red); color: #a13b3b; }
+
+    .submeta {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .note {
+      margin-top: 10px;
+      padding: 9px 11px;
+      border-radius: 12px;
+      background: #fffaf0;
+      color: #775b25;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .empty, .loading, .error {
+      text-align: center;
+      color: var(--muted);
+      padding: 36px 8px;
+      line-height: 1.8;
+    }
+
+    .error { color: #b00020; }
+
+    .back-top {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--green);
+      color: white;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .back-top.visible {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (max-width: 720px) {
+      .filters {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .filters {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (min-width: 720px) {
+      header {
+        padding: 34px 28px 44px;
+      }
+
+      header h1 {
+        font-size: 32px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>2026 雙北端午龍舟賽程查詢</h1>
+    <ul class="event-names">
+      <li>🏆 <a href="https://dragonboat.utk.com.tw/" target="_blank" rel="noopener noreferrer" style="color: white;">2026臺北國際龍舟錦標賽</a></li>
+      <li>🏆 <a href="https://www.ntpc-dragonboat.com.tw/" target="_blank" rel="noopener noreferrer" style="color: white;">新北市議長盃第十六屆龍舟錦標賽</a></li>
+    </ul>
+    <p>快速查詢<strong>臺北市</strong>、<strong>新北市</strong>端午龍舟賽程，可依日期、城市、船型、組別與隊名搜尋比賽時間。</p>
+    <p class="disclaimer">※ 本頁賽程資訊僅供參考，實際賽程仍以大會公告為準。</p>
+    <div class="header-links">
+      <a class="header-link" href="/dragonboat-2026/">完整賽程首頁</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="panel">
+      <div class="search-block">
+        <input id="keyword" class="search-input" type="text" placeholder="搜尋隊名、場次、組別，例如：3M、混合組、預賽" />
+
+        <div class="filters">
+          <select id="cityFilter" aria-label="選擇城市">
+            <option value="">全部城市</option>
+          </select>
+
+          <select id="dateFilter" aria-label="選擇日期">
+            <option value="">全部日期</option>
+          </select>
+
+          <details class="multi-select" id="boatFilter">
+            <summary class="multi-summary" id="boatSummary">全部船型</summary>
+            <div class="multi-menu" id="boatOptions"></div>
+          </details>
+
+          <details class="multi-select" id="groupFilter">
+            <summary class="multi-summary" id="groupSummary">全部組別</summary>
+            <div class="multi-menu" id="groupOptions"></div>
+          </details>
+        </div>
+      </div>
+
+    </section>
+
+    <div class="quick-row" id="dateQuickRow">
+      <button data-date="" class="active" onclick="setQuickDate('')">全部日期</button>
+    </div>
+
+    <div class="quick-row" id="cityQuickRow">
+      <button data-city="" class="city-btn active" onclick="setQuickCity('')">全部城市</button>
+      <button data-city="臺北市" class="city-btn" onclick="setQuickCity('臺北市')">臺北市</button>
+      <button data-city="新北市" class="city-btn" onclick="setQuickCity('新北市')">新北市</button>
+    </div>
+
+    <div class="summary">
+      <div class="summary-left">
+        <span>共 <strong id="count">0</strong> 場</span>
+        <button id="resetBtn" onclick="resetFilters()" title="清除所有篩選">× 重設篩選</button>
+        <div id="cityStats" class="city-stats"></div>
+      </div>
+      <div id="lastLoaded">資料讀取中</div>
+    </div>
+
+    <section id="scheduleList">
+      <div class="loading">資料讀取中...</div>
+    </section>
+  </main>
+
+  <button id="backToTop" class="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="回到頂端">↑</button>
+
+  <script>
+    const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0BPcjG1dSjL_t2xyJf7ppOamK3KgWKN5H9XnJKs-MXV4ZIsNz6yT6JD1sDFaHv07XaRqJsrJQhlSI/pub?gid=1796006260&single=true&output=csv";
+    const fields = {
+      city: "賽事城市",
+      type: "資料類型",
+      date: "日期",
+      time: "時間",
+      totalNo: "總場次",
+      boat: "競賽類別",
+      group: "組別",
+      round: "分組場次",
+      stage: "賽程階段",
+      place: "地點",
+      note: "備註",
+      status: "狀態",
+      lane1Time: "水道一成績",
+      lane2Time: "水道二成績",
+      lane3Time: "水道三成績",
+      lane4Time: "水道四成績"
+    };
+
+    let schedules = [];
+    let selectedCity = getCityFromQuery();
+    let selectedDate = "";
+    let selectedBoats = [];
+    let selectedGroups = [];
+    let hasAppliedInitialFilters = false;
+
+    const listEl = document.getElementById("scheduleList");
+    const countEl = document.getElementById("count");
+    const resetBtn = document.getElementById("resetBtn");
+    const lastLoadedEl = document.getElementById("lastLoaded");
+    const cityStatsEl = document.getElementById("cityStats");
+    const dateQuickRow = document.getElementById("dateQuickRow");
+    const cityQuickRow = document.getElementById("cityQuickRow");
+    const keywordEl = document.getElementById("keyword");
+    const cityFilter = document.getElementById("cityFilter");
+    const dateFilter = document.getElementById("dateFilter");
+    const boatFilter = document.getElementById("boatFilter");
+    const groupFilter = document.getElementById("groupFilter");
+    const boatSummaryEl = document.getElementById("boatSummary");
+    const groupSummaryEl = document.getElementById("groupSummary");
+    const boatOptionsEl = document.getElementById("boatOptions");
+    const groupOptionsEl = document.getElementById("groupOptions");
+    const initialQuery = new URLSearchParams(window.location.search);
+
+    document.addEventListener("DOMContentLoaded", init);
+    window.addEventListener("scroll", () => {
+      document.getElementById("backToTop").classList.toggle("visible", window.scrollY > 300);
+    });
+
+    function init() {
+      syncCityButtons(selectedCity);
+      updatePageTitle();
+      loadCSV();
+
+      [keywordEl, cityFilter, dateFilter].forEach(el => {
+        el.addEventListener("input", render);
+        el.addEventListener("change", render);
+      });
+
+      cityFilter.addEventListener("change", () => setCity(cityFilter.value));
+      dateFilter.addEventListener("change", () => syncDateButtons(dateFilter.value));
+      boatOptionsEl.addEventListener("change", onBoatOptionsChange);
+      groupOptionsEl.addEventListener("change", onGroupOptionsChange);
+      document.addEventListener("click", onDocumentClickForMenus);
+    }
+
+    function getCityFromQuery() {
+      const params = new URLSearchParams(window.location.search);
+      const city = params.get("city");
+      return city === "臺北市" || city === "新北市" ? city : "";
+    }
+
+    function setCity(city) {
+      selectedCity = city === "臺北市" || city === "新北市" ? city : "";
+      const nextUrl = new URL(window.location.href);
+      if (selectedCity) {
+        nextUrl.searchParams.set("city", selectedCity);
+      } else {
+        nextUrl.searchParams.delete("city");
+      }
+      window.history.replaceState({}, "", nextUrl.toString());
+      cityFilter.value = selectedCity;
+      syncCityButtons(selectedCity);
+      updatePageTitle();
+      selectedDate = "";
+      selectedBoats = [];
+      selectedGroups = [];
+      fillDateFilter("");
+      buildDateQuickButtons(getCurrentSchedules());
+      syncDateButtons("");
+      updateMultiSummary("boat");
+      updateMultiSummary("group");
+      syncMultiChecks("boat");
+      syncMultiChecks("group");
+      render();
+    }
+
+    function syncCityButtons(city) {
+      document.querySelectorAll(".city-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.city === city);
+      });
+    }
+
+    function updatePageTitle() {
+      document.title = `2026 ${selectedCity || "雙北端午龍舟"}精簡賽程`;
+    }
+
+    function loadCSV() {
+      Papa.parse(`${SHEET_CSV_URL}&t=${Date.now()}`, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete(results) {
+          schedules = results.data
+            .map(normalizeRow)
+            .filter(row => row.type === "比賽");
+          buildFilters();
+          render();
+          lastLoadedEl.textContent = `讀取時間 ${formatTime(new Date())}`;
+        },
+        error() {
+          listEl.innerHTML = `<div class="error">資料載入失敗，請稍後再試。</div>`;
+          lastLoadedEl.textContent = "讀取失敗";
+        }
+      });
+    }
+
+    function normalizeRow(row) {
+      const get = key => clean(row[fields[key]]);
+      return {
+        city: normalizeCityName(get("city")),
+        type: get("type") || "比賽",
+        date: get("date"),
+        time: get("time"),
+        totalNo: get("totalNo"),
+        boat: get("boat"),
+        group: get("group"),
+        round: get("round"),
+        place: get("place"),
+        note: get("note"),
+        status: get("status"),
+        stage: get("stage"),
+        hasAnyResult: [get("lane1Time"), get("lane2Time"), get("lane3Time"), get("lane4Time")].some(Boolean)
+      };
+    }
+
+    function clean(value) {
+      return String(value || "").trim();
+    }
+
+    function normalizeCityName(city) {
+      return city === "台北市" ? "臺北市" : city;
+    }
+
+    function getCurrentSchedules() {
+      return schedules.filter(item => !selectedCity || item.city === selectedCity);
+    }
+
+    function buildFilters() {
+      fillSelect(cityFilter, schedules.map(item => item.city));
+      cityFilter.value = selectedCity;
+      fillDateFilter(selectedDate);
+      renderMultiOptions("boat", schedules.map(item => item.boat));
+      renderMultiOptions("group", schedules.map(item => item.group));
+      if (!hasAppliedInitialFilters) {
+        applyInitialFiltersFromQuery();
+        hasAppliedInitialFilters = true;
+      } else {
+        syncMultiChecks("boat");
+        syncMultiChecks("group");
+        updateMultiSummary("boat");
+        updateMultiSummary("group");
+      }
+    }
+
+    function applyInitialFiltersFromQuery() {
+      const city = normalizeCityName(clean(initialQuery.get("city")));
+      const date = clean(initialQuery.get("date"));
+      const boats = parseMultiQuery(initialQuery.get("boat"));
+      const groups = parseMultiQuery(initialQuery.get("group"));
+      const keyword = clean(initialQuery.get("q"));
+
+      if (city && [...cityFilter.options].some(option => option.value === city)) {
+        selectedCity = city;
+        cityFilter.value = city;
+        syncCityButtons(city);
+      }
+
+      selectedBoats = boats.filter(value => getRenderedMultiValues("boat").includes(value));
+      selectedGroups = groups.filter(value => getRenderedMultiValues("group").includes(value));
+      syncMultiChecks("boat");
+      syncMultiChecks("group");
+      updateMultiSummary("boat");
+      updateMultiSummary("group");
+
+      if (keyword) {
+        keywordEl.value = keyword;
+      }
+
+      buildDateQuickButtons(getCurrentSchedules());
+      fillDateFilter(date);
+      if (dateFilter.value) {
+        selectedDate = dateFilter.value;
+        syncDateButtons(dateFilter.value);
+      }
+    }
+
+    function parseMultiQuery(value) {
+      return String(value || "")
+        .split(",")
+        .map(item => clean(item))
+        .filter(Boolean);
+    }
+
+    function fillSelect(selectEl, values) {
+      const firstOption = selectEl.options[0].outerHTML;
+      const uniqueValues = [...new Set(values.filter(Boolean))];
+      selectEl.innerHTML = firstOption;
+      uniqueValues.forEach(value => {
+        const option = document.createElement("option");
+        option.value = value;
+        option.textContent = value;
+        selectEl.appendChild(option);
+      });
+    }
+
+    function fillDateFilter(preferredValue = selectedDate) {
+      fillSelect(dateFilter, getCurrentSchedules().map(item => item.date));
+      if (preferredValue && [...dateFilter.options].some(option => option.value === preferredValue)) {
+        dateFilter.value = preferredValue;
+      } else {
+        dateFilter.value = "";
+      }
+    }
+
+    function renderMultiOptions(type, values) {
+      const targetEl = type === "boat" ? boatOptionsEl : groupOptionsEl;
+      const uniqueValues = [...new Set(values.filter(Boolean))];
+      targetEl.innerHTML = uniqueValues.map(value => `
+        <label class="multi-option">
+          <input type="checkbox" value="${escapeHTML(value)}">
+          <span>${escapeHTML(value)}</span>
+        </label>
+      `).join("");
+      syncMultiChecks(type);
+      updateMultiSummary(type);
+    }
+
+    function getRenderedMultiValues(type) {
+      const targetEl = type === "boat" ? boatOptionsEl : groupOptionsEl;
+      return [...targetEl.querySelectorAll('input[type="checkbox"]')].map(input => input.value);
+    }
+
+    function syncMultiChecks(type) {
+      const selected = type === "boat" ? selectedBoats : selectedGroups;
+      const targetEl = type === "boat" ? boatOptionsEl : groupOptionsEl;
+      targetEl.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.checked = selected.includes(input.value);
+      });
+    }
+
+    function updateMultiSummary(type) {
+      const selected = type === "boat" ? selectedBoats : selectedGroups;
+      const summaryEl = type === "boat" ? boatSummaryEl : groupSummaryEl;
+      const placeholder = type === "boat" ? "全部船型" : "全部組別";
+      if (!selected.length) {
+        summaryEl.textContent = placeholder;
+        return;
+      }
+      summaryEl.textContent = `已選 ${selected.length} 項`;
+    }
+
+    function onBoatOptionsChange() {
+      selectedBoats = [...boatOptionsEl.querySelectorAll('input:checked')].map(input => input.value);
+      updateMultiSummary("boat");
+      render();
+    }
+
+    function onGroupOptionsChange() {
+      selectedGroups = [...groupOptionsEl.querySelectorAll('input:checked')].map(input => input.value);
+      updateMultiSummary("group");
+      render();
+    }
+
+    function onDocumentClickForMenus(event) {
+      if (!boatFilter.contains(event.target)) {
+        boatFilter.removeAttribute("open");
+      }
+      if (!groupFilter.contains(event.target)) {
+        groupFilter.removeAttribute("open");
+      }
+    }
+
+    function buildDateQuickButtons(items) {
+      const allBtn = dateQuickRow.querySelector('button[data-date=""]');
+      dateQuickRow.innerHTML = "";
+      dateQuickRow.appendChild(allBtn);
+
+      const uniqueDates = [...new Set(items.map(item => item.date).filter(Boolean))];
+      uniqueDates.sort((a, b) => new Date(a.replace(/\(.+\)/, "")) - new Date(b.replace(/\(.+\)/, "")));
+
+      uniqueDates.forEach(date => {
+        const btn = document.createElement("button");
+        btn.dataset.date = date;
+        btn.textContent = date.replace(/^2026\//, "");
+        btn.onclick = () => setQuickDate(date);
+        dateQuickRow.appendChild(btn);
+      });
+    }
+
+    function setQuickDate(date) {
+      selectedDate = date;
+      dateFilter.value = date;
+      syncDateButtons(date);
+      render();
+    }
+
+    function setQuickCity(city) {
+      setCity(city);
+    }
+
+    function resetFilters() {
+      selectedCity = "";
+      selectedDate = "";
+      keywordEl.value = "";
+      cityFilter.value = "";
+      dateFilter.value = "";
+      selectedBoats = [];
+      selectedGroups = [];
+      syncCityButtons("");
+      syncDateButtons("");
+      syncMultiChecks("boat");
+      syncMultiChecks("group");
+      updateMultiSummary("boat");
+      updateMultiSummary("group");
+      updatePageTitle();
+      fillDateFilter("");
+      buildDateQuickButtons(schedules);
+      updateUrlFromFilters({
+        keyword: "",
+        city: "",
+        date: "",
+        boats: [],
+        groups: []
+      });
+      render();
+    }
+
+    function syncDateButtons(date) {
+      document.querySelectorAll("#dateQuickRow button").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.date === date);
+      });
+    }
+
+    function parseDateTime(item) {
+      const dateText = String(item.date || "").replace(/\s+/g, "").replace(/\(.+\)/, "");
+      const timeText = String(item.time || "").trim();
+      const timestamp = new Date(`${dateText} ${timeText}`).getTime();
+      return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    function parseTotalNo(value) {
+      const num = parseInt(String(value || "").replace(/[^\d]/g, ""), 10);
+      return Number.isNaN(num) ? 99999 : num;
+    }
+
+    function updateUrlFromFilters({ keyword, city, date, boats, groups }) {
+      const nextUrl = new URL(window.location.href);
+
+      if (city) {
+        nextUrl.searchParams.set("city", city);
+      } else {
+        nextUrl.searchParams.delete("city");
+      }
+
+      if (date) {
+        nextUrl.searchParams.set("date", date);
+      } else {
+        nextUrl.searchParams.delete("date");
+      }
+
+      if (boats.length) {
+        nextUrl.searchParams.set("boat", boats.join(","));
+      } else {
+        nextUrl.searchParams.delete("boat");
+      }
+
+      if (groups.length) {
+        nextUrl.searchParams.set("group", groups.join(","));
+      } else {
+        nextUrl.searchParams.delete("group");
+      }
+
+      const cleanKeyword = clean(keyword);
+      if (cleanKeyword) {
+        nextUrl.searchParams.set("q", cleanKeyword);
+      } else {
+        nextUrl.searchParams.delete("q");
+      }
+
+      window.history.replaceState({}, "", nextUrl.toString());
+    }
+
+    function render() {
+      const keyword = normalizeText(keywordEl.value);
+      const city = cityFilter.value;
+      const date = dateFilter.value;
+      const boats = selectedBoats;
+      const groups = selectedGroups;
+
+      if (city !== selectedCity) {
+        selectedCity = city;
+      }
+      selectedDate = date;
+      syncCityButtons(city);
+      syncDateButtons(date);
+      const hasFilter = !!(clean(keywordEl.value) || city || date || boats.length || groups.length);
+      resetBtn.classList.toggle("visible", hasFilter);
+      updateUrlFromFilters({
+        keyword: keywordEl.value,
+        city,
+        date,
+        boats,
+        groups
+      });
+
+      const filtered = schedules
+        .filter(item => {
+          const searchableText = normalizeText([
+            item.city,
+            item.date,
+            item.time,
+            item.totalNo,
+            item.boat,
+            item.group,
+            item.round,
+            item.stage,
+            item.place,
+            item.note
+          ].join(" "));
+
+          return (!keyword || searchableText.includes(keyword)) &&
+            (!city || item.city === city) &&
+            (!date || item.date === date) &&
+            (!boats.length || boats.includes(item.boat)) &&
+            (!groups.length || groups.includes(item.group));
+        })
+        .sort((a, b) => {
+          const dateTimeA = parseDateTime(a);
+          const dateTimeB = parseDateTime(b);
+          if (dateTimeA !== dateTimeB) return dateTimeA - dateTimeB;
+          if (a.city !== b.city) return a.city.localeCompare(b.city, "zh-Hant");
+          return parseTotalNo(a.totalNo) - parseTotalNo(b.totalNo);
+        });
+
+      countEl.textContent = filtered.length;
+      cityStatsEl.textContent = getCityStatsText(filtered);
+
+      if (!filtered.length) {
+        listEl.innerHTML = `<div class="empty">查無符合的賽程</div>`;
+        return;
+      }
+
+      const grouped = filtered.reduce((acc, item) => {
+        const key = item.date || "未標示日期";
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+
+      listEl.innerHTML = Object.entries(grouped).map(([date, items]) => `
+        <section class="date-section">
+          <h2 class="date-heading">${escapeHTML(date)}</h2>
+          ${items.map(renderCard).join("")}
+        </section>
+      `).join("");
+    }
+
+    function renderCard(item) {
+      const displayStatus = getAutoStatus(item);
+      const statusClass = getStatusClass(displayStatus);
+      const cityClass = getCityClass(item.city);
+      const statusBadge = displayStatus === "未開始"
+        ? ""
+        : `<div class="badge ${statusClass}">${escapeHTML(displayStatus)}</div>`;
+
+      return `
+        <article class="card ${cityClass}">
+          <div class="card-top">
+            <div>
+              <h2 class="time">${escapeHTML(item.time || "--:--")}</h2>
+              <div class="meta">
+                <span class="pill ${cityClass}">${escapeHTML(item.city)}</span>
+                ${item.boat ? `<span class="pill boat">${escapeHTML(item.boat)}</span>` : ""}
+                ${item.group ? `<span class="pill group">${escapeHTML(item.group)}</span>` : ""}
+              </div>
+              <div class="submeta">
+                ${escapeHTML(item.round || item.stage || "-")}
+                ${item.totalNo ? `｜總場次 ${escapeHTML(item.totalNo)}` : ""}
+                ${item.place ? `｜${escapeHTML(item.place)}` : ""}
+              </div>
+              ${item.note ? `<div class="note">${escapeHTML(item.note)}</div>` : ""}
+            </div>
+            ${statusBadge}
+          </div>
+        </article>
+      `;
+    }
+
+    function getAutoStatus(item) {
+      const manualStatus = clean(item.status);
+      if (["已完成", "延賽", "取消"].includes(manualStatus)) return manualStatus;
+      if (item.hasAnyResult) return "已完成";
+      const raceTime = parseDateTime(item);
+      if (!raceTime) return manualStatus || "未開始";
+      const now = Date.now();
+      const liveWindowMs = 15 * 60 * 1000;
+      if (now < raceTime) return "未開始";
+      if (now <= raceTime + liveWindowMs) return "比賽中";
+      return manualStatus || "待更新";
+    }
+
+    function getStatusClass(status) {
+      if (status === "比賽中") return "live";
+      if (status === "已完成") return "done";
+      if (status === "取消" || status === "延賽") return "cancel";
+      return "";
+    }
+
+    function getCityClass(city) {
+      if (city === "臺北市") return "city-taipei";
+      if (city === "新北市") return "city-newtaipei";
+      return "";
+    }
+
+    function normalizeText(value) {
+      return String(value || "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "")
+        .replace(/[　]/g, "")
+        .normalize("NFKC");
+    }
+
+    function getCityStatsText(items) {
+      const stats = items.reduce((acc, item) => {
+        const city = item.city || "其他";
+        acc[city] = (acc[city] || 0) + 1;
+        return acc;
+      }, {});
+
+      return Object.entries(stats)
+        .map(([city, count]) => `${city}：${count} 場`)
+        .join("　");
+    }
+
+    function formatTime(date) {
+      const hh = String(date.getHours()).padStart(2, "0");
+      const mm = String(date.getMinutes()).padStart(2, "0");
+      return `${hh}:${mm}`;
+    }
+
+    function escapeHTML(text) {
+      return String(text || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+
+</html>

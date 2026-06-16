@@ -270,7 +270,8 @@
       background: white;
     }
 
-    select {
+    select,
+    .multi-summary {
       width: 100%;
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -278,6 +279,71 @@
       font-size: 15px;
       background: white;
       margin-bottom: 10px;
+    }
+
+    .multi-select {
+      position: relative;
+    }
+
+    .multi-select[open] .multi-summary {
+      border-color: #b7c9be;
+      box-shadow: 0 0 0 3px rgba(15, 77, 58, 0.08);
+    }
+
+    .multi-summary {
+      list-style: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--text);
+    }
+
+    .multi-summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .multi-summary::after {
+      content: "⌄";
+      font-size: 18px;
+      line-height: 1;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+
+    .multi-menu {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 16px 32px rgba(0, 0, 0, 0.1);
+      padding: 8px;
+      max-height: 260px;
+      overflow: auto;
+    }
+
+    .multi-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .multi-option:hover {
+      background: #f6faf7;
+    }
+
+    .multi-option input {
+      margin: 0;
+      accent-color: var(--green);
     }
 
     /* 搜尋清除按鈕 */
@@ -609,6 +675,33 @@
       line-height: 1.6;
     }
 
+    .header-links {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .header-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      color: white;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      transition: background 0.15s ease, transform 0.15s ease;
+    }
+
+    .header-link:hover {
+      background: rgba(255, 255, 255, 0.24);
+      transform: translateY(-1px);
+    }
+
     .card.city-taipei {
       border-left-color: #1f7a8c;
     }
@@ -733,6 +826,9 @@
     </ul>
     <p>快速查詢<strong>臺北市</strong>、<strong>新北市</strong>端午龍舟賽程，可依日期、城市、船型、組別與隊名搜尋比賽時間。</p>
     <p class="disclaimer">※ 本頁賽程與成績資訊僅供參考，實際賽程、晉級與成績仍以大會現場公告為準。</p>
+    <div class="header-links">
+      <a class="header-link" href="/dragonboat-2026/time/">精簡賽程</a>
+    </div>
   </header>
 
   <main class="container">
@@ -753,13 +849,15 @@
           <option value="">全部日期</option>
         </select>
 
-        <select id="boatFilter" aria-label="選擇船型">
-          <option value="">全部船型</option>
-        </select>
+        <details class="multi-select" id="boatFilter">
+          <summary class="multi-summary" id="boatSummary">全部船型</summary>
+          <div class="multi-menu" id="boatOptions"></div>
+        </details>
 
-        <select id="groupFilter" aria-label="選擇組別">
-          <option value="">全部組別</option>
-        </select>
+        <details class="multi-select" id="groupFilter">
+          <summary class="multi-summary" id="groupSummary">全部組別</summary>
+          <div class="multi-menu" id="groupOptions"></div>
+        </details>
 
         <select id="stageFilter" aria-label="選擇階段">
           <option value="">全部階段</option>
@@ -817,6 +915,9 @@
     const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vS0BPcjG1dSjL_t2xyJf7ppOamK3KgWKN5H9XnJKs-MXV4ZIsNz6yT6JD1sDFaHv07XaRqJsrJQhlSI/pub?gid=1796006260&single=true&output=csv";
 
     let schedules = [];
+    let selectedBoats = [];
+    let selectedGroups = [];
+    let hasAppliedInitialFilters = false;
 
     const fields = {
       city: "賽事城市",
@@ -883,8 +984,13 @@
     const dateFilter = document.getElementById("dateFilter");
     const boatFilter = document.getElementById("boatFilter");
     const groupFilter = document.getElementById("groupFilter");
+    const boatSummaryEl = document.getElementById("boatSummary");
+    const groupSummaryEl = document.getElementById("groupSummary");
+    const boatOptionsEl = document.getElementById("boatOptions");
+    const groupOptionsEl = document.getElementById("groupOptions");
     const stageFilter = document.getElementById("stageFilter");
     const statusFilter = document.getElementById("statusFilter");
+    const initialQuery = new URLSearchParams(window.location.search);
 
     document.addEventListener("DOMContentLoaded", init);
 
@@ -915,7 +1021,7 @@
         loadCSV();
       }, 300000);
 
-      [keywordEl, cityFilter, dateFilter, boatFilter, groupFilter, stageFilter, statusFilter].forEach(el => {
+      [keywordEl, cityFilter, dateFilter, stageFilter, statusFilter].forEach(el => {
         el.addEventListener("input", render);
         el.addEventListener("change", render);
       });
@@ -928,14 +1034,39 @@
       // 下拉選單手動變更時，同步對應的 quick-row 按鈕
       statusFilter.addEventListener("change", () => syncStatusButtons(statusFilter.value));
       statusFilter.addEventListener("input", () => syncStatusButtons(statusFilter.value));
-      cityFilter.addEventListener("change", () => syncCityButtons(cityFilter.value));
-      cityFilter.addEventListener("input", () => syncCityButtons(cityFilter.value));
+      cityFilter.addEventListener("change", () => {
+        syncCityButtons(cityFilter.value);
+        fillDateFilter();
+        buildDateQuickButtons();
+        const availableDates = new Set(getDateQuickSourceItems().map(item => item.date).filter(Boolean));
+        if (dateFilter.value && !availableDates.has(dateFilter.value)) {
+          dateFilter.value = "";
+          syncDateButtons("");
+        } else {
+          syncDateButtons(dateFilter.value);
+        }
+      });
+      cityFilter.addEventListener("input", () => {
+        syncCityButtons(cityFilter.value);
+        fillDateFilter();
+        buildDateQuickButtons();
+        const availableDates = new Set(getDateQuickSourceItems().map(item => item.date).filter(Boolean));
+        if (dateFilter.value && !availableDates.has(dateFilter.value)) {
+          dateFilter.value = "";
+          syncDateButtons("");
+        } else {
+          syncDateButtons(dateFilter.value);
+        }
+      });
       dateFilter.addEventListener("change", () => syncDateButtons(dateFilter.value));
       dateFilter.addEventListener("input", () => syncDateButtons(dateFilter.value));
+      boatOptionsEl.addEventListener("change", onBoatOptionsChange);
+      groupOptionsEl.addEventListener("change", onGroupOptionsChange);
+      document.addEventListener("click", onDocumentClickForMenus);
 
       // --- GA 追蹤邏輯 ---
       // 1. 追蹤下拉選單 (change 事件)
-      [cityFilter, dateFilter, boatFilter, groupFilter, stageFilter, statusFilter].forEach(el => {
+      [cityFilter, dateFilter, stageFilter, statusFilter].forEach(el => {
         el.addEventListener("change", (e) => {
           if (typeof gtag === 'function' && e.target.value) {
             gtag('event', 'filter_used', {
@@ -1082,9 +1213,9 @@
 
     function buildFilters() {
       fillSelect(cityFilter, schedules.map(item => item.city));
-      fillSelect(dateFilter, schedules.map(item => item.date));
-      fillSelect(boatFilter, schedules.map(item => item.boat));
-      fillSelect(groupFilter, schedules.map(item => item.group));
+      fillDateFilter();
+      renderMultiOptions("boat", schedules.map(item => item.boat));
+      renderMultiOptions("group", schedules.map(item => item.group));
       fillSelect(stageFilter, [
         ...FIXED_STAGE_OPTIONS,
         ...schedules.map(item => item.stage)
@@ -1094,7 +1225,79 @@
         ...schedules.map(item => item.status)
       ]);
 
+      if (!hasAppliedInitialFilters) {
+        applyInitialFiltersFromQuery();
+        hasAppliedInitialFilters = true;
+      } else {
+        syncMultiChecks("boat");
+        syncMultiChecks("group");
+        updateMultiSummary("boat");
+        updateMultiSummary("group");
+      }
+
       buildDateQuickButtons();
+    }
+
+    function applyInitialFiltersFromQuery() {
+      const city = normalizeCityName(clean(initialQuery.get("city")));
+      const date = clean(initialQuery.get("date"));
+      const boats = parseMultiQuery(initialQuery.get("boat"));
+      const groups = parseMultiQuery(initialQuery.get("group"));
+      const stage = clean(initialQuery.get("stage"));
+      const status = clean(initialQuery.get("status"));
+      const keyword = clean(initialQuery.get("q"));
+
+      if (city && [...cityFilter.options].some(option => option.value === city)) {
+        cityFilter.value = city;
+        syncCityButtons(city);
+      }
+
+      selectedBoats = boats.filter(value => getRenderedMultiValues("boat").includes(value));
+      selectedGroups = groups.filter(value => getRenderedMultiValues("group").includes(value));
+      syncMultiChecks("boat");
+      syncMultiChecks("group");
+      updateMultiSummary("boat");
+      updateMultiSummary("group");
+
+      if (stage && [...stageFilter.options].some(option => option.value === stage)) {
+        stageFilter.value = stage;
+      }
+
+      if (status && [...statusFilter.options].some(option => option.value === status)) {
+        statusFilter.value = status;
+        syncStatusButtons(status);
+      }
+
+      if (keyword) {
+        keywordEl.value = keyword;
+        clearEl.classList.toggle("visible", keyword.length > 0);
+      }
+
+      fillDateFilter(date);
+      if (dateFilter.value) {
+        syncDateButtons(dateFilter.value);
+      }
+    }
+
+    function parseMultiQuery(value) {
+      return String(value || "")
+        .split(",")
+        .map(item => clean(item))
+        .filter(Boolean);
+    }
+
+    function getDateQuickSourceItems() {
+      const city = cityFilter.value;
+      return schedules.filter(item => !city || item.city === city);
+    }
+
+    function fillDateFilter(preferredValue = dateFilter.value) {
+      fillSelect(dateFilter, getDateQuickSourceItems().map(item => item.date));
+      if (preferredValue && [...dateFilter.options].some(option => option.value === preferredValue)) {
+        dateFilter.value = preferredValue;
+      } else {
+        dateFilter.value = "";
+      }
     }
 
     function buildDateQuickButtons() {
@@ -1104,7 +1307,7 @@
       quickRow.innerHTML = "";
       quickRow.appendChild(allBtn);
 
-      const uniqueDates = [...new Set(schedules.map(item => item.date).filter(Boolean))];
+      const uniqueDates = [...new Set(getDateQuickSourceItems().map(item => item.date).filter(Boolean))];
 
       // 排序日期
       uniqueDates.sort((a, b) => {
@@ -1164,6 +1367,72 @@
       });
     }
 
+    function renderMultiOptions(type, values) {
+      const targetEl = type === "boat" ? boatOptionsEl : groupOptionsEl;
+      const uniqueValues = [...new Set(values.filter(Boolean))];
+      targetEl.innerHTML = uniqueValues.map(value => `
+        <label class="multi-option">
+          <input type="checkbox" value="${escapeHTML(value)}">
+          <span>${escapeHTML(value)}</span>
+        </label>
+      `).join("");
+      syncMultiChecks(type);
+      updateMultiSummary(type);
+    }
+
+    function getRenderedMultiValues(type) {
+      const targetEl = type === "boat" ? boatOptionsEl : groupOptionsEl;
+      return [...targetEl.querySelectorAll('input[type="checkbox"]')].map(input => input.value);
+    }
+
+    function syncMultiChecks(type) {
+      const selected = type === "boat" ? selectedBoats : selectedGroups;
+      const targetEl = type === "boat" ? boatOptionsEl : groupOptionsEl;
+      targetEl.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        input.checked = selected.includes(input.value);
+      });
+    }
+
+    function updateMultiSummary(type) {
+      const selected = type === "boat" ? selectedBoats : selectedGroups;
+      const summaryEl = type === "boat" ? boatSummaryEl : groupSummaryEl;
+      const placeholder = type === "boat" ? "全部船型" : "全部組別";
+      summaryEl.textContent = selected.length ? `已選 ${selected.length} 項` : placeholder;
+    }
+
+    function onBoatOptionsChange() {
+      selectedBoats = [...boatOptionsEl.querySelectorAll('input:checked')].map(input => input.value);
+      updateMultiSummary("boat");
+      render();
+      if (typeof gtag === 'function' && selectedBoats.length) {
+        gtag('event', 'filter_used', {
+          filter_category: 'boatFilter',
+          filter_value: selectedBoats.join(',')
+        });
+      }
+    }
+
+    function onGroupOptionsChange() {
+      selectedGroups = [...groupOptionsEl.querySelectorAll('input:checked')].map(input => input.value);
+      updateMultiSummary("group");
+      render();
+      if (typeof gtag === 'function' && selectedGroups.length) {
+        gtag('event', 'filter_used', {
+          filter_category: 'groupFilter',
+          filter_value: selectedGroups.join(',')
+        });
+      }
+    }
+
+    function onDocumentClickForMenus(event) {
+      if (!boatFilter.contains(event.target)) {
+        boatFilter.removeAttribute("open");
+      }
+      if (!groupFilter.contains(event.target)) {
+        groupFilter.removeAttribute("open");
+      }
+    }
+
     // === 快捷按鈕同步函式 ===
 
     function syncStatusButtons(status) {
@@ -1190,14 +1459,22 @@
       keywordEl.value = "";
       cityFilter.value = "";
       dateFilter.value = "";
-      boatFilter.value = "";
-      groupFilter.value = "";
+      selectedBoats = [];
+      selectedGroups = [];
       stageFilter.value = "";
       statusFilter.value = "";
+      syncMultiChecks("boat");
+      syncMultiChecks("group");
+      updateMultiSummary("boat");
+      updateMultiSummary("group");
+      boatFilter.removeAttribute("open");
+      groupFilter.removeAttribute("open");
 
       // 同步快捷按鈕回「全部」
       syncStatusButtons("");
       syncCityButtons("");
+      fillDateFilter("");
+      buildDateQuickButtons();
       syncDateButtons("");
 
       // 隱藏清除按鈕
@@ -1226,6 +1503,17 @@
     function setQuickCity(city) {
       cityFilter.value = city;
       syncCityButtons(city);
+      fillDateFilter();
+      buildDateQuickButtons();
+      if (dateFilter.value) {
+        const availableDates = new Set(getDateQuickSourceItems().map(item => item.date).filter(Boolean));
+        if (!availableDates.has(dateFilter.value)) {
+          dateFilter.value = "";
+          syncDateButtons("");
+        } else {
+          syncDateButtons(dateFilter.value);
+        }
+      }
       render();
       if (typeof gtag === 'function' && city) {
         gtag('event', 'filter_used', { filter_category: 'quick_city', filter_value: city });
@@ -1245,8 +1533,8 @@
       const keyword = normalizeText(keywordEl.value);
       const city = cityFilter.value;
       const date = dateFilter.value;
-      const boat = boatFilter.value;
-      const group = groupFilter.value;
+      const boats = selectedBoats;
+      const groups = selectedGroups;
       const stage = stageFilter.value;
       const status = statusFilter.value;
 
@@ -1273,8 +1561,8 @@
         return (!keyword || searchableText.includes(keyword)) &&
           (!city || item.city === city) &&
           (!date || item.date === date) &&
-          (!boat || item.boat === boat) &&
-          (!group || item.group === group) &&
+          (!boats.length || boats.includes(item.boat)) &&
+          (!groups.length || groups.includes(item.group)) &&
           (!stage || item.stage === stage) &&
           (!status || getAutoStatus(item) === status);
       });
@@ -1309,7 +1597,7 @@
       cityStatsEl.textContent = cityStatsText;
 
       // 有任何篩選條件時顯示重設按鈕
-      const hasFilter = !!(keyword || city || date || boat || group || stage || status);
+      const hasFilter = !!(keyword || city || date || boats.length || groups.length || stage || status);
       resetEl.classList.toggle("visible", hasFilter);
 
       if (!filtered.length) {
