@@ -1534,6 +1534,55 @@
       }
     }
 
+    function updateUrlFromFilters({ keyword, city, date, boats, groups, stage, status }) {
+      const nextUrl = new URL(window.location.href);
+
+      if (city) {
+        nextUrl.searchParams.set("city", city);
+      } else {
+        nextUrl.searchParams.delete("city");
+      }
+
+      if (date) {
+        nextUrl.searchParams.set("date", date);
+      } else {
+        nextUrl.searchParams.delete("date");
+      }
+
+      if (boats.length) {
+        nextUrl.searchParams.set("boat", boats.join(","));
+      } else {
+        nextUrl.searchParams.delete("boat");
+      }
+
+      if (groups.length) {
+        nextUrl.searchParams.set("group", groups.join(","));
+      } else {
+        nextUrl.searchParams.delete("group");
+      }
+
+      if (stage) {
+        nextUrl.searchParams.set("stage", stage);
+      } else {
+        nextUrl.searchParams.delete("stage");
+      }
+
+      if (status) {
+        nextUrl.searchParams.set("status", status);
+      } else {
+        nextUrl.searchParams.delete("status");
+      }
+
+      const cleanKeyword = clean(keyword);
+      if (cleanKeyword) {
+        nextUrl.searchParams.set("q", cleanKeyword);
+      } else {
+        nextUrl.searchParams.delete("q");
+      }
+
+      window.history.replaceState({}, "", nextUrl.toString());
+    }
+
     function render() {
       const keyword = normalizeText(keywordEl.value);
       const city = cityFilter.value;
@@ -1542,6 +1591,16 @@
       const groups = selectedGroups;
       const stage = stageFilter.value;
       const status = statusFilter.value;
+
+      updateUrlFromFilters({
+        keyword: keywordEl.value,
+        city,
+        date,
+        boats,
+        groups,
+        stage,
+        status
+      });
 
       const filtered = schedules.filter(item => {
         const searchableText = normalizeText([
