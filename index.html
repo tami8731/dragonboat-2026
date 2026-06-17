@@ -1501,7 +1501,7 @@
       syncStatusButtons(status);
       render();
       if (typeof gtag === 'function' && status) {
-        gtag('event', 'filter_used', { filter_category: 'quick_status', filter_value: status });
+        gtag('event', 'filter_used', { filter_category: 'statusFilter', filter_value: status });
       }
     }
 
@@ -1521,7 +1521,7 @@
       }
       render();
       if (typeof gtag === 'function' && city) {
-        gtag('event', 'filter_used', { filter_category: 'quick_city', filter_value: city });
+        gtag('event', 'filter_used', { filter_category: 'cityFilter', filter_value: city });
       }
     }
 
@@ -1530,7 +1530,7 @@
       syncDateButtons(date);
       render();
       if (typeof gtag === 'function' && date) {
-        gtag('event', 'filter_used', { filter_category: 'quick_date', filter_value: date });
+        gtag('event', 'filter_used', { filter_category: 'dateFilter', filter_value: date });
       }
     }
 
