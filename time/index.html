@@ -592,7 +592,10 @@
       });
 
       cityFilter.addEventListener("change", () => setCity(cityFilter.value));
-      dateFilter.addEventListener("change", () => syncDateButtons(dateFilter.value));
+      dateFilter.addEventListener("change", () => {
+        syncDateButtons(dateFilter.value);
+        trackFilterUsed("dateFilter", dateFilter.value);
+      });
       boatOptionsEl.addEventListener("change", onBoatOptionsChange);
       groupOptionsEl.addEventListener("change", onGroupOptionsChange);
       document.addEventListener("click", onDocumentClickForMenus);
@@ -627,6 +630,7 @@
       syncMultiChecks("boat");
       syncMultiChecks("group");
       render();
+      trackFilterUsed("cityFilter", selectedCity);
     }
 
     function syncCityButtons(city) {
@@ -808,12 +812,14 @@
       selectedBoats = [...boatOptionsEl.querySelectorAll('input:checked')].map(input => input.value);
       updateMultiSummary("boat");
       render();
+      trackFilterUsed("boatFilter", selectedBoats.join(","));
     }
 
     function onGroupOptionsChange() {
       selectedGroups = [...groupOptionsEl.querySelectorAll('input:checked')].map(input => input.value);
       updateMultiSummary("group");
       render();
+      trackFilterUsed("groupFilter", selectedGroups.join(","));
     }
 
     function onDocumentClickForMenus(event) {
@@ -842,11 +848,21 @@
       });
     }
 
+    function trackFilterUsed(category, value) {
+      if (typeof gtag === 'function' && value) {
+        gtag('event', 'filter_used', {
+          filter_category: category,
+          filter_value: value
+        });
+      }
+    }
+
     function setQuickDate(date) {
       selectedDate = date;
       dateFilter.value = date;
       syncDateButtons(date);
       render();
+      trackFilterUsed("dateFilter", date);
     }
 
     function setQuickCity(city) {
